@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnchartedLLM Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .output-box {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            color: #667eea;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .control-panel {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .control-panel h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .chart-container-square {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* 1:1 aspect ratio */
+            margin-top: 15px;
+        }
+
+        .chart-container-square canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected {
+            background: #28a745;
+            box-shadow: 0 0 8px #28a745;
+        }
+
+        .status-disconnected {
+            background: #dc3545;
+        }
+
+        .status-generating {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .charts-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .token-highlight {
+            background: #ffffcc;
+            padding: 2px 4px;
+            border-radius: 3px;
+            animation: highlight 0.5s;
+        }
+
+        @keyframes highlight {
+            from { background: #ffff00; }
+            to { background: #ffffcc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 UnchartedLLM Chatbot</h1>
+            <p>可控长度文本生成 - 实时交互式界面</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧面板 -->
+            <div class="left-panel">
+                <!-- 连接状态 -->
+                <div class="card">
+                    <div class="connection-status">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="statusText">未连接</span>
+                        <span id="loadingSpinner" class="loading" style="display: none;"></span>
+                    </div>
+                </div>
+
+                <!-- 输入配置 -->
+                <div class="card">
+                    <h2>📝 输入配置</h2>
+                    <div class="input-group">
+                        <label for="promptInput">Prompt (提示词):</label>
+                        <textarea id="promptInput" placeholder="请输入提示词...">Once upon a time</textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="initialTarget">Initial Target (初始目标长度):</label>
+                        <input type="number" id="initialTarget" value="100" min="1" max="32768">
+                    </div>
+                    <div class="input-group">
+                        <label for="maxLength">Max Length (最大生成长度):</label>
+                        <input type="number" id="maxLength" value="512" min="1" max="2048">
+                    </div>
+                    <div class="input-group">
+                        <label for="temperature">Temperature (采样温度):</label>
+                        <input type="number" id="temperature" value="1.0" min="0.1" max="2.0" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="topK">Top-K (采样范围):</label>
+                        <input type="number" id="topK" value="50" min="0" max="1000" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="topP">Top-P (核采样):</label>
+                        <input type="number" id="topP" value="0.9" min="0.0" max="1.0" step="0.05">
+                    </div>
+                    <div class="input-group">
+                        <label for="pplWindowSize">PPL Window Size (困惑度窗口大小):</label>
+                        <input type="number" id="pplWindowSize" value="512" min="10" max="2048" step="1">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" id="generateBtn" onclick="startGeneration()">
+                            🚀 开始生成
+                        </button>
+                        <button class="btn-danger" id="stopBtn" onclick="stopGeneration()" disabled>
+                            ⏹️ 停止
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- API 控制规划 -->
+                <div class="card">
+                    <h2>🎯 API 控制规划</h2>
+                    <div class="input-group">
+                        <label for="controlStrategy">控制策略:</label>
+                        <select id="controlStrategy" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                            <option value="none">无控制 (使用predicted_target)</option>
+                            <option value="partial">部分控制 (前N步使用规划)</option>
+                            <option value="full">全程控制 (全程使用规划)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="compellingStepsGroup" style="display: none;">
+                        <label for="compellingSteps">强制控制步数 (Compelling Steps):</label>
+                        <input type="number" id="compellingSteps" value="50" min="0" max="1000">
+                    </div>
+                    <div class="input-group">
+                        <label for="controlPoints">控制点 (JSON格式):</label>
+                        <textarea id="controlPoints" style="min-height: 120px; font-family: 'Courier New', monospace; font-size: 0.9em;" placeholder='示例: [[0, 1], [1, 0]]&#10;&#10;格式说明:&#10;- 横坐标: 已输出token / initial_target&#10;- 纵坐标: 输入target / initial_target&#10;- 第一个点必须是 [0, 1]&#10;- 最后一个点的y值必须是 0'>[[0, 1], [1, 0]]</textarea>
+                    </div>
+                    <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 5px; font-size: 0.85em;">
+                        <strong>💡 提示:</strong><br>
+                        • 线性递减: [[0,1], [1,0]] (斜率=-1)<br>
+                        • 快速递减: [[0,1], [0.5,0]] (前半段快速)<br>
+                        • 慢速递减: [[0,1], [2,0]] (延长生成)
+                    </div>
+                </div>
+
+                <!-- 实时统计 -->
+                <div class="card">
+                    <h2>📊 实时统计</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="label">已输出 Token 数</div>
+                            <div class="value" id="totalTokens">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">输出 Target 数值</div>
+                            <div class="value" id="outputTargetValue">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">Cosine 相似度</div>
+                            <div class="value" id="cosineValue">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">当前步数</div>
+                            <div class="value" id="currentStep">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板 -->
+            <div class="right-panel">
+                <!-- 生成输出 -->
+                <div class="card">
+                    <h2>💬 生成输出</h2>
+                    <div class="output-box" id="outputBox">等待生成...</div>
+                </div>
+
+                <!-- 详细信息 -->
+                <div class="card">
+                    <h2>🔍 详细信息</h2>
+                    <div class="output-box" id="detailsBox" style="max-height: 300px; font-size: 0.85em;">
+                        等待生成...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="charts-section" id="chartsSection" style="display: none;">
+                <div class="card">
+                    <h2>📉 PPL (困惑度) 曲线</h2>
+                    <div class="chart-container">
+                        <canvas id="pplChart" style="height: 300px;"></canvas>
+                    </div>
+                    <div class="stats-grid" style="margin-top: 15px;">
+                        <div class="stat-card">
+                            <div class="label">均值 (Mean)</div>
+                            <div class="value" id="pplMean" style="font-size: 1.4em;">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">方差 (Variance)</div>
+                            <div class="value" id="pplVariance" style="font-size: 1.4em;">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">最小值 (Min)</div>
+                            <div class="value" id="pplMin" style="font-size: 1.4em;">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">最大值 (Max)</div>
+                            <div class="value" id="pplMax" style="font-size: 1.4em;">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>📉 Cosine 相似度曲线</h2>
+                    <div class="chart-container">
+                        <canvas id="cosineChart" style="height: 300px;"></canvas>
+                    </div>
+                    <div class="stats-grid" style="margin-top: 15px;">
+                        <div class="stat-card">
+                            <div class="label">均值 (Mean)</div>
+                            <div class="value" id="cosineMean" style="font-size: 1.4em;">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="label">方差 (Variance)</div>
+                            <div class="value" id="cosineVariance" style="font-size: 1.4em;">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>📊 Target vs 已输出Token关系图</h2>
+                    <div class="chart-container-square">
+                        <canvas id="targetVsTokenChart"></canvas>
+                    </div>
+                    <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.9em;">
+                        <div style="margin-bottom: 10px; font-weight: bold; color: #667eea;">拟合直线方程:</div>
+                        <div id="fitEquation" style="margin-bottom: 10px; color: #333;">y = b + a*x</div>
+                        <div style="margin-bottom: 10px; font-weight: bold; color: #667eea;">损失函数 (MSE):</div>
+                        <div id="mseLoss" style="margin-bottom: 10px; color: #333;">L = (1/n) * Σ(y_i - ŷ_i)²</div>
+                        <div style="margin-bottom: 10px; font-weight: bold; color: #667eea;">决定系数 (R²):</div>
+                        <div id="r2Score" style="color: #333;">R² = 1 - (SS_res / SS_tot)</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>🎯 输入 Target 值曲线</h2>
+                    <div class="chart-container-square">
+                        <canvas id="inputTargetChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>📊 Predicted vs Input Target 对比</h2>
+                    <div class="chart-container-square">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                    <div id="segmentMseSection" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+                        <div style="margin-bottom: 10px; font-weight: bold; color: #856404; font-size: 1.1em;">📊 分段MSE分析 (全局控制策略)</div>
+                        <div id="segmentMseDetails" style="font-family: 'Courier New', monospace; font-size: 0.9em; color: #333;"></div>
+                        <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                            <div style="font-weight: bold; color: #667eea; margin-bottom: 5px;">加权平均MSE:</div>
+                            <div id="weightedMse" style="font-size: 1.3em; color: #dc3545; font-weight: bold;">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let ws = null;
+        let isGenerating = false;
+        let generatedText = '';
+        let historyData = [];
+        let updateInterval = null;
+        let cosineChart = null;
+        let pplChart = null;
+        let targetVsTokenChart = null;
+        let inputTargetChart = null;
+        let comparisonChart = null;
+        let currentControlPoints = null;
+        let currentControlStrategy = 'none';
+        let currentInitialTarget = 100;
+        let reconnectTimer = null;  // 用于跟踪重连定时器
+
+        // WebSocket 连接
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+            console.log('Connecting to:', wsUrl);
+            updateStatus('connecting', '正在连接...');
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                updateStatus('connected', '已连接');
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleMessage(message);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('disconnected', '连接错误');
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket closed');
+                updateStatus('disconnected', '连接断开');
+
+                // 清除任何现有的重连定时器
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
+
+                // 5秒后自动重连（仅在非手动停止的情况下）
+                if (!isGenerating) {
+                    reconnectTimer = setTimeout(() => {
+                        if (!ws || ws.readyState === WebSocket.CLOSED) {
+                            connectWebSocket();
+                        }
+                        reconnectTimer = null;
+                    }, 5000);
+                }
+            };
+        }
+
+        // 更新连接状态
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const spinner = document.getElementById('loadingSpinner');
+
+            indicator.className = 'status-indicator';
+
+            if (status === 'connected') {
+                indicator.classList.add('status-connected');
+                spinner.style.display = 'none';
+            } else if (status === 'disconnected') {
+                indicator.classList.add('status-disconnected');
+                spinner.style.display = 'none';
+            } else if (status === 'generating') {
+                indicator.classList.add('status-generating');
+                spinner.style.display = 'inline-block';
+            } else if (status === 'connecting') {
+                indicator.classList.add('status-disconnected');
+                spinner.style.display = 'inline-block';
+            }
+
+            statusText.textContent = text;
+        }
+
+        // 处理 WebSocket 消息
+        function handleMessage(message) {
+            if (message.type === 'step') {
+                // 单步数据
+                const data = message.data;
+                historyData.push(data);
+
+                // 更新生成文本
+                generatedText += data.token_text;
+                document.getElementById('outputBox').textContent = generatedText;
+
+                // 更新统计信息
+                updateStats(data);
+
+                // 更新详细信息
+                updateDetails(data);
+
+            } else if (message.type === 'complete') {
+                // 生成完成
+                console.log('Generation complete');
+                historyData = message.history;
+                isGenerating = false;
+
+                updateStatus('connected', '已连接');
+                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+
+                // 显示图表
+                showCharts();
+
+            }
+        }
+
+        // 更新统计信息
+        function updateStats(data) {
+            document.getElementById('totalTokens').textContent = data.total_tokens;
+            document.getElementById('outputTargetValue').textContent = data.output_target_value.toFixed(2);
+            document.getElementById('cosineValue').textContent = data.cosine_similarity.toFixed(4);
+            document.getElementById('currentStep').textContent = data.step;
+        }
+
+        // 更新详细信息
+        function updateDetails(data) {
+            const detailsBox = document.getElementById('detailsBox');
+            const detail = `
+[Step ${data.step}]
+Token: "${data.token_text}" (ID: ${data.token_id})
+Input Target Value: ${data.input_target_value.toFixed(2)}
+Output Target Value: ${data.output_target_value.toFixed(2)}
+Output Target Norm: ${data.output_target_norm.toFixed(4)}
+Cosine Similarity: ${data.cosine_similarity.toFixed(4)}
+Total Tokens: ${data.total_tokens}
+${'='.repeat(50)}
+`;
+            detailsBox.textContent = detail + detailsBox.textContent;
+        }
+
+        // 开始生成
+        function startGeneration() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('WebSocket 未连接，请等待连接建立');
+                return;
+            }
+
+            // 重置状态
+            generatedText = '';
+            historyData = [];
+            document.getElementById('outputBox').textContent = '生成中...';
+            document.getElementById('detailsBox').textContent = '';
+            document.getElementById('chartsSection').style.display = 'none';
+
+            // 重置统计
+            document.getElementById('totalTokens').textContent = '0';
+            document.getElementById('outputTargetValue').textContent = '-';
+            document.getElementById('cosineValue').textContent = '-';
+            document.getElementById('currentStep').textContent = '0';
+
+            // 获取参数
+            const prompt = document.getElementById('promptInput').value;
+            const initialTarget = parseFloat(document.getElementById('initialTarget').value);
+            const maxLength = parseInt(document.getElementById('maxLength').value);
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const topK = parseInt(document.getElementById('topK').value);
+            const topP = parseFloat(document.getElementById('topP').value);
+            const pplWindowSize = parseInt(document.getElementById('pplWindowSize').value);
+
+            // 获取控制参数
+            const controlStrategy = document.getElementById('controlStrategy').value;
+            const compellingSteps = parseInt(document.getElementById('compellingSteps').value);
+            let controlPoints = null;
+
+            // 解析控制点
+            if (controlStrategy !== 'none') {
+                try {
+                    const controlPointsText = document.getElementById('controlPoints').value;
+                    controlPoints = JSON.parse(controlPointsText);
+
+                    // 验证控制点格式
+                    if (!Array.isArray(controlPoints)) {
+                        throw new Error('控制点必须是数组');
+                    }
+                    for (let point of controlPoints) {
+                        if (!Array.isArray(point) || point.length !== 2) {
+                            throw new Error('每个控制点必须是 [x, y] 格式');
+                        }
+                    }
+
+                    console.log('Parsed control points:', controlPoints);
+                } catch (e) {
+                    alert('控制点格式错误: ' + e.message);
+                    return;
+                }
+            }
+
+            // 保存控制参数到全局变量
+            currentControlPoints = controlPoints;
+            currentControlStrategy = controlStrategy;
+            currentInitialTarget = initialTarget;
+
+            // 发送生成请求
+            ws.send(JSON.stringify({
+                type: 'generate',
+                prompt: prompt,
+                initial_target: initialTarget,
+                max_length: maxLength,
+                temperature: temperature,
+                top_k: topK,
+                top_p: topP,
+                control_points: controlPoints,
+                control_strategy: controlStrategy,
+                compelling_steps: compellingSteps,
+                ppl_window_size: pplWindowSize
+            }));
+
+            isGenerating = true;
+            updateStatus('generating', '生成中...');
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+        }
+
+        // 停止生成
+        function stopGeneration() {
+            // 先设置标志，防止 onclose 触发自动重连
+            isGenerating = false;
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+
+            updateStatus('disconnected', '已停止');
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+
+            // 清除任何现有的重连定时器
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+
+            // 重新连接（只设置一次）
+            reconnectTimer = setTimeout(() => {
+                connectWebSocket();
+                reconnectTimer = null;
+            }, 1000);
+        }
+
+
+        // 计算线性回归
+        function linearRegression(x, y) {
+            const n = x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+            for (let i = 0; i < n; i++) {
+                sumX += x[i];
+                sumY += y[i];
+                sumXY += x[i] * y[i];
+                sumX2 += x[i] * x[i];
+            }
+
+            const a = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const b = (sumY - a * sumX) / n;
+
+            return { a, b };
+        }
+
+        // 计算 MSE
+        function calculateMSE(x, y, a, b) {
+            const n = x.length;
+            let sumSquaredError = 0;
+
+            for (let i = 0; i < n; i++) {
+                const predicted = b + a * x[i];
+                const error = y[i] - predicted;
+                sumSquaredError += error * error;
+            }
+
+            return sumSquaredError / n;
+        }
+
+        // 计算 R²
+        function calculateR2(x, y, a, b) {
+            const n = x.length;
+            const meanY = y.reduce((sum, val) => sum + val, 0) / n;
+
+            let ssRes = 0;  // 残差平方和
+            let ssTot = 0;  // 总平方和
+
+            for (let i = 0; i < n; i++) {
+                const predicted = b + a * x[i];
+                ssRes += (y[i] - predicted) ** 2;
+                ssTot += (y[i] - meanY) ** 2;
+            }
+
+            return 1 - (ssRes / ssTot);
+        }
+
+        // 计算均值
+        function calculateMean(values) {
+            return values.reduce((sum, val) => sum + val, 0) / values.length;
+        }
+
+        // 计算方差
+        function calculateVariance(values) {
+            const mean = calculateMean(values);
+            const squaredDiffs = values.map(val => (val - mean) ** 2);
+            return squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+        }
+
+        // 计算规划曲线上的值（支持线段延伸）
+        function getPlannedValue(x, controlPoints, initialTarget) {
+            // x: 已输出token数（归一化前）
+            // controlPoints: [[x1, y1], [x2, y2], ...] (归一化坐标)
+            // initialTarget: 初始target值
+
+            const xNorm = x / initialTarget;  // 归一化x坐标
+
+            // 找到x所在的线段
+            for (let i = 0; i < controlPoints.length - 1; i++) {
+                const [x1, y1] = controlPoints[i];
+                const [x2, y2] = controlPoints[i + 1];
+
+                if (xNorm >= x1 && xNorm <= x2) {
+                    // 在线段内，线性插值
+                    const t = (xNorm - x1) / (x2 - x1);
+                    const yNorm = y1 + t * (y2 - y1);
+                    return yNorm * initialTarget;
+                }
+            }
+
+            // 如果超出最后一个控制点，延伸最后一段线段
+            if (xNorm > controlPoints[controlPoints.length - 1][0]) {
+                const lastIdx = controlPoints.length - 1;
+                const [x1, y1] = controlPoints[lastIdx - 1];
+                const [x2, y2] = controlPoints[lastIdx];
+
+                // 计算斜率
+                const slope = (y2 - y1) / (x2 - x1);
+
+                // 延伸线段
+                const yNorm = y2 + slope * (xNorm - x2);
+                return yNorm * initialTarget;
+            }
+
+            // 如果在第一个控制点之前，返回第一个点的值
+            return controlPoints[0][1] * initialTarget;
+        }
+
+        // 计算分段MSE
+        function calculateSegmentMSE(totalTokens, predictedValues, controlPoints, initialTarget) {
+            // 确保控制点按x排序
+            const sortedPoints = [...controlPoints].sort((a, b) => a[0] - b[0]);
+
+            const segments = [];
+
+            // 对每个线段计算MSE
+            for (let i = 0; i < sortedPoints.length - 1; i++) {
+                const [x1Norm, y1Norm] = sortedPoints[i];
+                const [x2Norm, y2Norm] = sortedPoints[i + 1];
+
+                // 转换为实际坐标
+                const x1 = x1Norm * initialTarget;
+                const x2 = x2Norm * initialTarget;
+
+                // 找到该线段范围内的数据点
+                const segmentData = [];
+                for (let j = 0; j < totalTokens.length; j++) {
+                    const token = totalTokens[j];
+                    if (token >= x1 && token <= x2) {
+                        const plannedValue = getPlannedValue(token, sortedPoints, initialTarget);
+                        const predictedValue = predictedValues[j];
+                        segmentData.push({
+                            token: token,
+                            predicted: predictedValue,
+                            planned: plannedValue,
+                            error: (predictedValue - plannedValue) ** 2
+                        });
+                    }
+                }
+
+                // 计算该线段的MSE
+                if (segmentData.length > 0) {
+                    const mse = segmentData.reduce((sum, d) => sum + d.error, 0) / segmentData.length;
+                    segments.push({
+                        segmentIndex: i,
+                        x1: x1,
+                        x2: x2,
+                        y1: y1Norm * initialTarget,
+                        y2: y2Norm * initialTarget,
+                        dataCount: segmentData.length,
+                        mse: mse
+                    });
+                }
+            }
+
+            // 检查是否有超出最后一个控制点的数据（需要延伸线段）
+            const lastX = sortedPoints[sortedPoints.length - 1][0] * initialTarget;
+            const extendedData = [];
+            for (let j = 0; j < totalTokens.length; j++) {
+                const token = totalTokens[j];
+                if (token > lastX) {
+                    const plannedValue = getPlannedValue(token, sortedPoints, initialTarget);
+                    const predictedValue = predictedValues[j];
+                    extendedData.push({
+                        token: token,
+                        predicted: predictedValue,
+                        planned: plannedValue,
+                        error: (predictedValue - plannedValue) ** 2
+                    });
+                }
+            }
+
+            // 如果有延伸段数据，添加到segments
+            if (extendedData.length > 0) {
+                const mse = extendedData.reduce((sum, d) => sum + d.error, 0) / extendedData.length;
+                const lastIdx = sortedPoints.length - 1;
+                segments.push({
+                    segmentIndex: lastIdx,
+                    x1: lastX,
+                    x2: Math.max(...totalTokens),
+                    y1: sortedPoints[lastIdx][1] * initialTarget,
+                    y2: getPlannedValue(Math.max(...totalTokens), sortedPoints, initialTarget),
+                    dataCount: extendedData.length,
+                    mse: mse,
+                    isExtended: true
+                });
+            }
+
+            // 计算加权平均MSE
+            const totalDataCount = segments.reduce((sum, seg) => sum + seg.dataCount, 0);
+            const weightedMSE = segments.reduce((sum, seg) => {
+                const weight = seg.dataCount / totalDataCount;
+                return sum + weight * seg.mse;
+            }, 0);
+
+            return {
+                segments: segments,
+                weightedMSE: weightedMSE,
+                totalDataCount: totalDataCount
+            };
+        }
+
+        // 显示图表
+        function showCharts() {
+            document.getElementById('chartsSection').style.display = 'grid';
+
+            // 准备数据
+            const steps = historyData.map(d => d.step);
+            const totalTokens = historyData.map(d => d.total_tokens);
+            const targetValues = historyData.map(d => d.output_target_value);
+            const cosineValues = historyData.map(d => d.cosine_similarity);
+            const inputTargetValues = historyData.map(d => d.input_target_value);
+            const plannedTargetValues = historyData.map(d => d.planned_target_value || 0);
+            const pplValues = historyData.map(d => d.ppl).filter(p => p !== null && p !== undefined);
+
+            // 销毁旧图表
+            if (pplChart) pplChart.destroy();
+            if (cosineChart) cosineChart.destroy();
+            if (targetVsTokenChart) targetVsTokenChart.destroy();
+            if (inputTargetChart) inputTargetChart.destroy();
+            if (comparisonChart) comparisonChart.destroy();
+
+            // 计算 PPL 统计信息
+            if (pplValues.length > 0) {
+                const pplMean = calculateMean(pplValues);
+                const pplVariance = calculateVariance(pplValues);
+                const pplMin = Math.min(...pplValues);
+                const pplMax = Math.max(...pplValues);
+
+                document.getElementById('pplMean').textContent = pplMean.toFixed(2);
+                document.getElementById('pplVariance').textContent = pplVariance.toFixed(2);
+                document.getElementById('pplMin').textContent = pplMin.toFixed(2);
+                document.getElementById('pplMax').textContent = pplMax.toFixed(2);
+
+                // 创建 PPL 图表
+                const pplTokens = historyData
+                    .filter(d => d.ppl !== null && d.ppl !== undefined)
+                    .map(d => d.total_tokens);
+
+                const pplCtx = document.getElementById('pplChart').getContext('2d');
+                pplChart = new Chart(pplCtx, {
+                    type: 'line',
+                    data: {
+                        labels: pplTokens,
+                        datasets: [{
+                            label: 'PPL (困惑度)',
+                            data: pplValues,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            title: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `PPL: ${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '已输出 Token 数'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Perplexity (困惑度)'
+                                },
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 计算 Cosine 统计信息
+            const cosineMean = calculateMean(cosineValues);
+            const cosineVariance = calculateVariance(cosineValues);
+
+            document.getElementById('cosineMean').textContent = cosineMean.toFixed(6);
+            document.getElementById('cosineVariance').textContent = cosineVariance.toFixed(6);
+
+            // 创建 Cosine 相似度图表
+            const cosineCtx = document.getElementById('cosineChart').getContext('2d');
+            cosineChart = new Chart(cosineCtx, {
+                type: 'line',
+                data: {
+                    labels: steps,
+                    datasets: [{
+                        label: 'Cosine 相似度',
+                        data: cosineValues,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '已输出 Token 数'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Cosine 相似度'
+                            },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // 计算线性回归（针对 output_target）
+            const { a, b } = linearRegression(totalTokens, targetValues);
+            const mse = calculateMSE(totalTokens, targetValues, a, b);
+            const r2 = calculateR2(totalTokens, targetValues, a, b);
+
+            // 生成拟合线数据
+            const minToken = Math.min(...totalTokens);
+            const maxToken = Math.max(...totalTokens);
+            const fittedLine = [
+                { x: minToken, y: b + a * minToken },
+                { x: maxToken, y: b + a * maxToken }
+            ];
+
+            // 更新统计信息显示
+            document.getElementById('fitEquation').textContent =
+                `y = ${b.toFixed(4)} + ${a.toFixed(4)} * x`;
+            document.getElementById('mseLoss').textContent =
+                `L = ${mse.toFixed(4)}`;
+            document.getElementById('r2Score').textContent =
+                `R² = ${r2.toFixed(6)}`;
+
+            // 计算统一的坐标轴范围（强制 X-Y 比例尺统一）
+            const allValues = [...totalTokens, ...targetValues];
+            const minVal = Math.min(...allValues);
+            const maxVal = Math.max(...allValues);
+            const range = maxVal - minVal;
+            const padding = range * 0.1;
+            const axisMin = Math.floor(minVal - padding);
+            const axisMax = Math.ceil(maxVal + padding);
+
+            // 创建 Target vs Token 关系图（统一比例尺）
+            const targetVsTokenCtx = document.getElementById('targetVsTokenChart').getContext('2d');
+            targetVsTokenChart = new Chart(targetVsTokenCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: '实际数据点',
+                            data: totalTokens.map((token, i) => ({ x: token, y: targetValues[i] })),
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                            borderColor: '#667eea',
+                            borderWidth: 1,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: '拟合直线',
+                            data: fittedLine,
+                            type: 'line',
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,  // 强制 1:1 比例
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return `Token: ${context.parsed.x}, Target: ${context.parsed.y.toFixed(2)}`;
+                                    } else {
+                                        return `拟合值: ${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: '已输出 Token 数 (x)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: axisMin,
+                            max: axisMax,
+                            ticks: {
+                                stepSize: Math.ceil(range / 10)
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Target 数值 (y)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: axisMin,
+                            max: axisMax,
+                            ticks: {
+                                stepSize: Math.ceil(range / 10)
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 创建输入 Target 值曲线图（统一比例尺）
+            const inputTargetCtx = document.getElementById('inputTargetChart').getContext('2d');
+            inputTargetChart = new Chart(inputTargetCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '输入 Target 值',
+                        data: totalTokens.map((token, i) => ({ x: token, y: inputTargetValues[i] })),
+                        backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                        borderColor: '#28a745',
+                        borderWidth: 1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        showLine: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Token: ${context.parsed.x}, Input Target: ${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: '已输出 Token 数 (x)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: axisMin,
+                            max: axisMax,
+                            ticks: {
+                                stepSize: Math.ceil(range / 10)
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: '输入 Target 值 (y)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: axisMin,
+                            max: axisMax,
+                            ticks: {
+                                stepSize: Math.ceil(range / 10)
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 创建对比图（Predicted vs Input Target）（统一比例尺）
+            const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+            comparisonChart = new Chart(comparisonCtx, {
+                type: 'line',
+                data: {
+                    labels: totalTokens,
+                    datasets: [
+                        {
+                            label: 'Predicted Target (输出)',
+                            data: targetValues,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Input Target (输入)',
+                            data: inputTargetValues,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: '已输出 Token 数 (x)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: axisMin,
+                            max: axisMax,
+                            ticks: {
+                                stepSize: Math.ceil(range / 10)
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Target 值 (y)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: axisMin,
+                            max: axisMax,
+                            ticks: {
+                                stepSize: Math.ceil(range / 10)
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 计算并显示分段MSE（仅在全局控制策略时）
+            if (currentControlStrategy === 'full' && currentControlPoints && currentControlPoints.length > 0) {
+                try {
+                    const mseResult = calculateSegmentMSE(
+                        totalTokens,
+                        targetValues,
+                        currentControlPoints,
+                        currentInitialTarget
+                    );
+
+                    // 显示MSE区域
+                    document.getElementById('segmentMseSection').style.display = 'block';
+
+                    // 构建详细信息HTML
+                    let detailsHtml = '';
+                    mseResult.segments.forEach((seg, idx) => {
+                        const segmentLabel = seg.isExtended ? '延伸段' : `线段 ${seg.segmentIndex + 1}`;
+                        detailsHtml += `
+<div style="margin-bottom: 10px; padding: 10px; background: white; border-left: 4px solid ${seg.isExtended ? '#dc3545' : '#667eea'}; border-radius: 3px;">
+    <div style="font-weight: bold; color: ${seg.isExtended ? '#dc3545' : '#667eea'};">${segmentLabel}</div>
+    <div style="margin-top: 5px;">
+        <span style="color: #666;">范围:</span> x ∈ [${seg.x1.toFixed(1)}, ${seg.x2.toFixed(1)}]
+    </div>
+    <div>
+        <span style="color: #666;">规划值:</span> y ∈ [${seg.y1.toFixed(2)}, ${seg.y2.toFixed(2)}]
+    </div>
+    <div>
+        <span style="color: #666;">数据点数:</span> ${seg.dataCount}
+    </div>
+    <div>
+        <span style="color: #666;">MSE:</span> <span style="color: #dc3545; font-weight: bold;">${seg.mse.toFixed(4)}</span>
+    </div>
+    <div>
+        <span style="color: #666;">权重:</span> ${(seg.dataCount / mseResult.totalDataCount * 100).toFixed(1)}%
+    </div>
+</div>`;
+                    });
+
+                    document.getElementById('segmentMseDetails').innerHTML = detailsHtml;
+                    document.getElementById('weightedMse').textContent = mseResult.weightedMSE.toFixed(4);
+
+                    console.log('Segment MSE Analysis:', mseResult);
+                } catch (error) {
+                    console.error('Error calculating segment MSE:', error);
+                    document.getElementById('segmentMseSection').style.display = 'none';
+                }
+            } else {
+                // 非全局控制策略，隐藏MSE区域
+                document.getElementById('segmentMseSection').style.display = 'none';
+            }
+        }
+
+        // 控制策略选择器事件
+        function onControlStrategyChange() {
+            const strategy = document.getElementById('controlStrategy').value;
+            const compellingStepsGroup = document.getElementById('compellingStepsGroup');
+
+            if (strategy === 'partial') {
+                compellingStepsGroup.style.display = 'block';
+            } else {
+                compellingStepsGroup.style.display = 'none';
+            }
+        }
+
+        // 页面加载时连接 WebSocket
+        window.onload = () => {
+            connectWebSocket();
+
+            // 绑定控制策略选择器事件
+            document.getElementById('controlStrategy').addEventListener('change', onControlStrategyChange);
+
+            // 初始化显示状态
+            onControlStrategyChange();
+        };
+
+        // 页面卸载时关闭 WebSocket
+        window.onbeforeunload = () => {
+            if (ws) {
+                ws.close();
+            }
+        };
+    </script>
+</body>
+</html>

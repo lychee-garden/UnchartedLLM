@@ -1,0 +1,48 @@
+# UnchartedLLM Requirements
+# Core dependencies for training, inference, and evaluation
+
+# Deep Learning Framework
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Transformers and NLP
+transformers>=4.36.0
+tokenizers>=0.15.0
+datasets>=4.0.0
+huggingface-hub>=0.20.0
+
+# Training Acceleration
+accelerate>=0.25.0
+deepspeed>=0.12.0
+
+# Experiment Tracking
+wandb>=0.16.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+pyarrow>=14.0.0
+
+# Utilities
+tqdm>=4.65.0
+requests>=2.31.0
+pyyaml>=6.0
+
+# Web Interface (for chatbot)
+aiohttp>=3.9.0
+aiohttp-cors>=0.7.0
+websockets>=12.0
+gradio>=4.0.0
+uvicorn>=0.25.0
+fastapi>=0.108.0
+
+# Evaluation
+einops>=0.7.0
+scipy>=1.11.0
+
+# Optional: GPU Monitoring
+nvidia-ml-py>=12.0.0
+pynvml>=11.5.0
+
+# Optional: Performance
+ninja>=1.11.0

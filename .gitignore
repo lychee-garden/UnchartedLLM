@@ -1,0 +1,146 @@
+# Checkpoints and Model Files
+checkpoints/
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.h5
+*.pb
+
+# Datasets
+datasets/
+data/
+*.arrow
+*.jsonl
+*.json.gz
+*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+conda_env/
+
+# PyTorch
+*.pth.tar
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Logs and Databases
+*.log
+*.sql
+*.sqlite
+*.db
+logs/
+wandb/
+tensorboard/
+runs/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# HuggingFace Cache
+.cache/
+huggingface/
+transformers_cache/
+
+# DeepSpeed
+.deepspeed_env
+
+# Lock Files (dataset-specific)
+*.lock
+*.incomplete_info.lock
+
+# Compiled Files
+*.o
+*.a
+*.lib
+*.dll
+*.dylib
+
+# Documentation Build
+docs/_build/
+site/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# pytype
+.pytype/
+
+# Cython
+*.c
+*.cpp
+cython_debug/
